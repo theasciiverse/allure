@@ -35,12 +35,22 @@ stops in a smaller one.
   used. The `directory` lower bound rises to 1.3.7, the first with
   `XdgState`.
 
+- **Less output from the ANSI frontend**
+  (`LambdaHack/engine-src/Game/LambdaHack/Client/UI/Frontend/ANSI.hs`). It
+  wrote both colour codes before every character; it now writes them only
+  where the colours change along a row. The screen is drawn the same, with
+  about a ninth of the bytes, which keeps it smooth over ssh and slow
+  terminals.
+
 ## Packaging
 
 - `cabal.project.asciiverse`: Allure and `./LambdaHack`, LambdaHack with
   `-f -sdl`.
 - `asciiverse/build.sh`: the release build. One static binary, glibc, gmp,
   zlib and the rest linked in, so players install nothing.
+- `asciiverse/cc-static.sh`: the linker GHC uses for that build; it adds
+  `-static` for the executable only, since GHC still links shared objects
+  for Template Haskell while building the libraries.
 - `.github/workflows/asciiverse-release.yml`: builds Linux x86-64 and
   ARM64 on Ubuntu 22.04 with GHC 9.8.2, smoke-tests each binary, and
   attaches archives and SHA256SUMS to the release.

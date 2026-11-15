@@ -20,3 +20,11 @@ and up and needs no SDL, fonts or display server, which is what we ship.
 otherwise uses `getXdgDirectory XdgState "allure"` (the program name in
 lower case), creating the folders above it first, since `tryCreateDir`
 makes only the last one. That needs `directory >= 1.3.7`.
+
+## Less ANSI output
+
+`Frontend/ANSI.hs` writes the two colour codes only where they change
+along a row, instead of before every character. Your comment there says
+it gains little against the worst case of checkerboard rooms; for us the
+point is bytes: about nine times fewer in ordinary play, which shows over
+ssh and in terminal recordings. The screen is drawn the same.

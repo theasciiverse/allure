@@ -43,12 +43,14 @@ utf8 = true
 color = "basic"
 mouse = false
 
-# 80x45 (the game's own size): its attract mode, the squad played by the
-# game's own AI through the opening decks, with fights and looting; cropped
-# to 100x30 following the player (RECORDING.md)
+# 80x45 (the game's own size, run with --maxFps 12): its attract mode, the
+# game's own AI playing the raid adventure in the Triton City sewers, with
+# a feral home robot clubbed and thornbushes in the way, then save and exit
+# from the main menu; cropped to 100x30 following the player
+# (RECORDING.md); the still is the explored sewers at 40 s
 [media]
 cast = "asciiverse/allure.cast"
-thumbnail_at = 25.0
+thumbnail_at = 40.0
 crop = { follow = "player" }
 
 [release]
