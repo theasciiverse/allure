@@ -1,0 +1,11 @@
+profiling: True
+library-profiling: True
+profiling-detail: all-functions
+
+flags: +with_expensive_assertions
+optimization: False
+documentation: False
+
+package *
+  documentation: True
+  library-profiling: True
