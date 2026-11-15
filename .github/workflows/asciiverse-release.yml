@@ -1,0 +1,107 @@
+# Builds Allure of the Stars for the Asciiverse catalog: one archive per
+# target, named <id>-<target>.tar.gz, plus a SHA256SUMS file, attached to a
+# GitHub release (hub/catalog/SCHEMA.md, release.source = "github"). Runs
+# on a pushed v* tag, or by hand for an existing tag.
+#
+# Each archive holds one static Allure binary (asciiverse/build.sh) that
+# plays in the terminal through LambdaHack's ANSI frontend, with no SDL2 and
+# no library needed on the player's machine, plus the game's readme, help
+# and licence. Linux only for now.
+
+name: asciiverse-release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "existing tag to build and release"
+        required: true
+
+env:
+  ID: allure
+  TAG: ${{ inputs.tag || github.ref_name }}
+  GHC: "9.8.2"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-22.04 }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-22.04-arm }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: System libraries
+        run: sudo apt-get update && sudo apt-get install -y libgmp-dev libffi-dev libnuma-dev zlib1g-dev pkg-config file
+
+      - uses: haskell-actions/setup@v2
+        id: setup
+        with:
+          ghc-version: ${{ env.GHC }}
+          cabal-version: "3.12.1.0"
+
+      - name: Freeze
+        run: cabal freeze --project-file=cabal.project.asciiverse
+
+      - uses: actions/cache/restore@v4
+        id: cache
+        with:
+          key: ${{ matrix.target }}-${{ env.GHC }}-${{ hashFiles('cabal.project.asciiverse.freeze') }}
+          path: ${{ steps.setup.outputs.cabal-store }}
+          restore-keys: |
+            ${{ matrix.target }}-${{ env.GHC }}-
+
+      - name: Build
+        run: JOBS=2 sh asciiverse/build.sh
+
+      - uses: actions/cache/save@v4
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        with:
+          key: ${{ matrix.target }}-${{ env.GHC }}-${{ hashFiles('cabal.project.asciiverse.freeze') }}
+          path: ${{ steps.setup.outputs.cabal-store }}
+
+      - name: Smoke test
+        run: python3 asciiverse/smoke.py stage/Allure
+
+      - name: Package
+        run: |
+          # the binary sits at the top of the archive, where av looks for it
+          mkdir -p dist
+          tar -czf "dist/$ID-${{ matrix.target }}.tar.gz" -C stage .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: dist/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum * > SHA256SUMS && cat SHA256SUMS
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$TAG" -R "$GITHUB_REPOSITORY" --title "Allure of the Stars $TAG" \
+                 --notes "Allure of the Stars $TAG from github.com/AllureOfTheStars/Allure, terminal edition, built for the Asciiverse catalog."
+          gh release upload "$TAG" dist/* -R "$GITHUB_REPOSITORY" --clobber
