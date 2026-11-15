@@ -42,7 +42,9 @@ import qualified Game.LambdaHack.Definition.Color as Color
 import qualified Game.LambdaHack.Client.UI.Frontend.Dom as Chosen
 #else
 import qualified Game.LambdaHack.Client.UI.Frontend.ANSI as ANSI
+#ifndef NO_SDL
 import qualified Game.LambdaHack.Client.UI.Frontend.Sdl as Chosen
+#endif
 #endif
 
 -- | The instructions sent by clients to the raw frontend, indexed
@@ -87,7 +89,11 @@ chanFrontendIO coscreen soptions = do
 #ifndef USE_BROWSER
               | sfrontendANSI soptions = ANSI.startup coscreen
 #endif
+#ifdef NO_SDL
+              | otherwise = ANSI.startup coscreen
+#else
               | otherwise = Chosen.startup coscreen soptions
+#endif
       maxFps = fromMaybe defaultMaxFps $ smaxFps soptions
       delta = max 1 $ round $ intToDouble microInSec / max 0.000001 maxFps
   rf <- startup
@@ -191,7 +197,11 @@ frontendName soptions =
 #ifndef USE_BROWSER
      | sfrontendANSI soptions -> ANSI.frontendName
 #endif
+#ifdef NO_SDL
+     | otherwise -> ANSI.frontendName
+#else
      | otherwise -> Chosen.frontendName
+#endif
 
 lazyStartup :: ScreenContent -> IO RawFrontend
 lazyStartup coscreen = createRawFrontend coscreen (\_ -> return ()) (return ())

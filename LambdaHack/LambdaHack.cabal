@@ -93,6 +93,12 @@ flag supportNodeJS
   default:            True
   manual:             True
 
+flag sdl
+  description:        build the SDL2 frontend; without it the ANSI terminal
+                      frontend is the default and nothing links SDL2
+  default:            True
+  manual:             True
+
 flag jsaddle
   description:        switch to the JSaddle frontend (may be bit-rotted)
   default:            False
@@ -340,11 +346,15 @@ library
     build-depends:    ghcjs-dom >= 0.9.1.1
     cpp-options:      -DUSE_BROWSER
   } else {
-    exposed-modules:  Game.LambdaHack.Client.UI.Frontend.Sdl
-                      Game.LambdaHack.Client.UI.Frontend.ANSI
-    build-depends:    sdl2 >= 2,
-                      sdl2-ttf >= 2,
-                      ansi-terminal >= 0.10
+    exposed-modules:  Game.LambdaHack.Client.UI.Frontend.ANSI
+    build-depends:    ansi-terminal >= 0.10
+    if flag(sdl) {
+      exposed-modules:  Game.LambdaHack.Client.UI.Frontend.Sdl
+      build-depends:    sdl2 >= 2,
+                        sdl2-ttf >= 2
+    } else {
+      cpp-options:      -DNO_SDL
+    }
   }
 
   if impl(ghcjs) {
