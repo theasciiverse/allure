@@ -231,20 +231,24 @@ display ScreenContent{rwidth} SingleFrame{singleArray} = do
       f (!y, chunk) = do
         ANSI.hSetCursorPosition SIO.stderr y 0
         SIO.hPutStr SIO.stderr $ g chunk
-      g = concatMap h
+      -- The colour codes are written only where they change along a row.
+      g = go Nothing
+      go _ [] = []
+      go prev (w : ws) =
+        let acChar = squashChar $ Color.charFromW32 w
+            attr = setAttr $ Color.attrFromW32 w
+            code = if Just attr == prev then [] else sgr attr
+        in code ++ [acChar] ++ go (Just attr) ws
+      sgr (fg, bg) = ANSI.setSGRCode [ uncurry (ANSI.SetColor ANSI.Foreground)
+                                       $ colorTranslate fg
+                                     , uncurry (ANSI.SetColor ANSI.Background)
+                                       $ colorTranslate bg ]
+      -- (Upstream's note on the codes written for every character:)
       -- Not emitting ANSI if the previous character had the same fg and bg
       -- gains little in terms of maximal lag, due to checkerboard levels/rooms
       -- (even though it triples FPS in normal rooms; but comparing with
       -- previous frame gains even more in normal cases and copes well
       -- with checkerboard; both not worth the effort for this frontend).
-      h !w =
-        let acChar = squashChar $ Color.charFromW32 w
-            (fg, bg) = setAttr $ Color.attrFromW32 w
-        in ANSI.setSGRCode [ uncurry (ANSI.SetColor ANSI.Foreground)
-                             $ colorTranslate fg
-                           , uncurry (ANSI.SetColor ANSI.Background)
-                             $ colorTranslate bg ]
-           ++ [acChar]
 {-
 This is dubious, because I can't force bright background colour with that,
 only bright foregrounds. And I have at least one bright backround: bright black.

@@ -13,7 +13,7 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root"
 P="--project-file=cabal.project.asciiverse --builddir=dist-static"
 jobs=${JOBS:-4}
-cabal build -j"$jobs" $P --ghc-options="-optl-static -optl-pthread" exe:Allure
+cabal build -j"$jobs" $P --ghc-options="-pgml $root/asciiverse/cc-static.sh" exe:Allure
 rm -rf stage
 mkdir -p stage
 cp "$(cabal list-bin $P exe:Allure)" stage/
