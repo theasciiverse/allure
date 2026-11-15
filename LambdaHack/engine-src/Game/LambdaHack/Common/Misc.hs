@@ -21,7 +21,14 @@ import           Data.Int (Int64)
 import qualified Data.Map as M
 import           GHC.Generics (Generic)
 import qualified NLP.Miniutter.English as MU
-import           System.Directory (getAppUserDataDirectory)
+import qualified Control.Exception as Ex
+import           System.Directory
+  ( XdgDirectory (..)
+  , createDirectoryIfMissing
+  , doesDirectoryExist
+  , getAppUserDataDirectory
+  , getXdgDirectory
+  )
 import           System.Environment (getProgName)
 import           System.IO.Unsafe (unsafePerformIO)
 
@@ -95,12 +102,21 @@ squashedWWandW parts =
   in (MU.WWandW $ map fst cars, person)
 
 -- | Personal data directory for the game. Depends on the OS and the game,
--- e.g., for LambdaHack under Linux it's @~\/.LambdaHack\/@.
+-- e.g., for LambdaHack under Linux it's @~\/.LambdaHack\/@ when that
+-- already exists, and otherwise the platform's state folder,
+-- @$XDG_STATE_HOME\/lambdahack\/@ (else @~\/.local\/state\/lambdahack\/@;
+-- @%LOCALAPPDATA%\\lambdahack@ on Windows).
 appDataDir :: IO FilePath
 appDataDir = do
   progName <- getProgName
   let name = takeWhile Char.isAlphaNum progName
-  getAppUserDataDirectory name
+  old <- getAppUserDataDirectory name
+  oldExists <- doesDirectoryExist old
+  if oldExists then return old else do
+    -- The game creates its own folder, but not the folders above it.
+    Ex.handle (\(_ :: Ex.IOException) -> return ()) $
+      getXdgDirectory XdgState "" >>= createDirectoryIfMissing True
+    getXdgDirectory XdgState (map Char.toLower name)
 
 -- | Multiplies by a million.
 xM :: Int -> Int64
