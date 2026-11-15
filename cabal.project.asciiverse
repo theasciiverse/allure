@@ -1,0 +1,11 @@
+-- The Asciiverse build: Allure with the LambdaHack engine from ./LambdaHack,
+-- built without SDL2 so the ANSI terminal frontend is the game's display.
+--   cabal build --project-file=cabal.project.asciiverse exe:Allure
+packages: ./
+          ./LambdaHack
+
+package LambdaHack
+  flags: -sdl
+
+package splitmix
+  flags: +optimised-mixer
