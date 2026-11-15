@@ -84,8 +84,11 @@ jobs:
           name: ${{ matrix.target }}
           path: dist/*
 
+  # a target that fails to build is left out rather than holding back the
+  # others (ARM64's static link overflows the small GOT of glibc's libc.a)
   release:
     needs: build
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4
