@@ -10,4 +10,5 @@ for a in "$@"; do
     @*) grep -q -- '-shared' "${a#@}" 2>/dev/null && exec "${CC:-cc}" "$@" ;;
   esac
 done
-exec "${CC:-cc}" "$@" -static -pthread
+# xmknod.c: the old glibc entry point GHC's unix package still calls
+exec "${CC:-cc}" "$@" "$(dirname "$0")/xmknod.c" -static -pthread

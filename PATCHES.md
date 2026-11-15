@@ -51,6 +51,8 @@ stops in a smaller one.
 - `asciiverse/cc-static.sh`: the linker GHC uses for that build; it adds
   `-static` for the executable only, since GHC still links shared objects
   for Template Haskell while building the libraries.
+- `asciiverse/xmknod.c`: `__xmknod` for the static link; GHC 9.8.2's
+  unix package calls it, and glibc 2.33 on keeps it out of `libc.a`.
 - `.github/workflows/asciiverse-release.yml`: builds Linux x86-64 and
   ARM64 on Ubuntu 22.04 with GHC 9.8.2, smoke-tests each binary, and
   attaches archives and SHA256SUMS to the release.
